@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "223710503102",
+    "project_id": "let-stalk-87b18",
+    "storage_bucket": "let-stalk-87b18.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:223710503102:android:c68c9fb6acfd3ec6067eef",
+        "android_client_info": {
+          "package_name": "com.example.lets_talk"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCB83u4RKdeyhwQ6KhWzneQhTWrVoJ7C1U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
