@@ -7,12 +7,14 @@ class ChatPage extends StatefulWidget {
   final String receiverName;
   final String receiverId;
   final String senderid;
+  final bool isgroup;
 
   const ChatPage({
     super.key,
     required this.receiverName,
     required this.receiverId,
     required this.senderid,
+    required this.isgroup,
   });
 
   @override

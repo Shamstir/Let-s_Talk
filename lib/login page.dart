@@ -1,9 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'home.dart';
-import 'sign up.dart';
+import 'package:lets_talk/home.dart';
+import 'package:lets_talk/sign%20up.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,42 +12,40 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController usernameController = TextEditingController();
   bool isPasswordVisible = false;
   bool isLoading = false;
 
   Future<void> userLogin() async {
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
-    String email = emailController.text.trim();
     String password = passwordController.text.trim();
     String username = usernameController.text.trim();
 
-    if (email.isEmpty || password.isEmpty || username.isEmpty) {
+    if (password.isEmpty || username.isEmpty) {
       showError("All fields are required!");
+      setState(() => isLoading = false);
       return;
     }
 
     try {
-      // Check if the email exists in Firestore
+      // Check if the username exists in Firestore
       CollectionReference users = FirebaseFirestore.instance.collection('users');
-      QuerySnapshot querySnapshot =
-      await users.where('email', isEqualTo: email).get();
+      QuerySnapshot querySnapshot = await users.where('username', isEqualTo: username).get();
 
       if (querySnapshot.docs.isEmpty) {
         showError("Username does not exist!");
+        setState(() => isLoading = false);
         return;
       }
 
-      var userDoc = querySnapshot.docs.first;
-      String storedUsername = userDoc['username'];
+      var userDoc = querySnapshot.docs.first.data() as Map<String, dynamic>;
+      String email = userDoc['email'] ?? '';
 
-      if (storedUsername != username) {
-        showError("Incorrect username for this email!");
+      if (email.isEmpty) {
+        showError("No email associated with this username!");
+        setState(() => isLoading = false);
         return;
       }
 
@@ -59,64 +56,73 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       // Navigate to Home Page on successful login
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => Homepage()));
-
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const Homepage()),
+        );
+      }
     } on FirebaseAuthException catch (e) {
       showError(e.message ?? "Login failed!");
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
   void showError(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-    setState(() {
-      isLoading = false;
-    });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Center(
+      backgroundColor: Colors.blue[50],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
           child: SingleChildScrollView(
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.chat_bubble, size: 80, color: Colors.blueAccent),
-                SizedBox(height: 20),
-                Text('Login',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                SizedBox(height: 20),
+                const Icon(Icons.chat_bubble, size: 80, color: Colors.blueAccent),
+                const SizedBox(height: 20),
+                const Text(
+                  'Welcome Back',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent,
+                  ),
+                ),
+                const SizedBox(height: 30),
 
                 // Username Field
                 TextField(
                   controller: usernameController,
                   decoration: InputDecoration(
                     labelText: 'Username',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person),
+                    prefixIcon: const Icon(Icons.person, color: Colors.blueAccent),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.blueAccent),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
                 ),
-                SizedBox(height: 20),
-
-                // Email Field
-                TextField(
-                  controller: emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                SizedBox(height: 15),
+                const SizedBox(height: 20),
 
                 // Password Field
                 TextField(
@@ -124,58 +130,79 @@ class _LoginPageState extends State<LoginPage> {
                   obscureText: !isPasswordVisible,
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
+                    prefixIcon: const Icon(Icons.lock, color: Colors.blueAccent),
                     suffixIcon: IconButton(
-                      icon: Icon(isPasswordVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off),
-                      onPressed: () {
-                        setState(() {
-                          isPasswordVisible = !isPasswordVisible;
-                        });
-                      },
+                      icon: Icon(
+                        isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.blueAccent,
+                      ),
+                      onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
                     ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.blueAccent),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
                 ),
-                SizedBox(height: 15),
+                const SizedBox(height: 15),
 
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {},
-                    child: Text('Forgot Password?'),
+                    onPressed: () {
+                      // Add forgot password functionality here
+                    },
+                    child: const Text(
+                      'Forgot Password?',
+                      style: TextStyle(color: Colors.blueAccent),
+                    ),
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 30),
 
                 // Login Button
                 ElevatedButton(
-                  onPressed: () async {
-                    await userLogin();
-                  },
-                  child: isLoading
-                      ? CircularProgressIndicator()
-                      : Text('Login'),
+                  onPressed: isLoading ? null : userLogin,
                   style: ElevatedButton.styleFrom(
-                    minimumSize: Size(double.infinity, 50),
+                    backgroundColor: Colors.blueAccent,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                    'Login',
+                    style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
                 ),
-                SizedBox(height: 15),
+                const SizedBox(height: 20),
 
                 // Signup Option
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Don't have an account? "),
+                    const Text(
+                      "Don't have an account? ",
+                      style: TextStyle(color: Colors.black54),
+                    ),
                     TextButton(
                       onPressed: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => Signup()));
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const Signup()),
+                        );
                       },
-                      child: Text('Sign Up'),
+                      child: const Text(
+                        'Sign Up',
+                        style: TextStyle(color: Colors.blueAccent),
+                      ),
                     ),
                   ],
                 ),
@@ -185,5 +212,12 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    passwordController.dispose();
+    usernameController.dispose();
+    super.dispose();
   }
 }

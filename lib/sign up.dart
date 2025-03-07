@@ -20,28 +20,27 @@ class _SignupState extends State<Signup> {
 
   Future<void> addUserToFirestore(String email, String username) async {
     CollectionReference users = FirebaseFirestore.instance.collection('users');
-
-    QuerySnapshot querySnapshot =
-    await users.where('email', isEqualTo: email).get();
-
-    if (querySnapshot.docs.isEmpty) {
-      // Create a new user entry
+    QuerySnapshot querySnapshot = await users.where('email', isEqualTo: email).get();
+    QuerySnapshot query = await users.where('username', isEqualTo: username).get();
+    if (querySnapshot.docs.isEmpty&& query.docs.isEmpty) {
       await users.add({
         'username': username,
         'email': email,
+        'createdAt': FieldValue.serverTimestamp(),
       });
-    } else {
-      var existingUser = querySnapshot.docs.first;
-      if (existingUser['username'] != username) {
+    } else if(query.docs.isEmpty) {
+
         showError("This email is already linked to another username!");
-      }
+
+    }
+    else{
+
+        showError("This username  already exist");
     }
   }
 
   Future<void> createNewUser() async {
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     String email = emailController.text.trim();
     String username = usernameController.text.trim();
@@ -49,6 +48,7 @@ class _SignupState extends State<Signup> {
 
     if (email.isEmpty || username.isEmpty || password.isEmpty) {
       showError("All fields are required!");
+      setState(() => isLoading = false);
       return;
     }
 
@@ -60,126 +60,168 @@ class _SignupState extends State<Signup> {
 
       await addUserToFirestore(email, username);
 
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => LoginPage()));
+      // Clear the navigation stack and go to LoginPage
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+              (Route<dynamic> route) => false,
+        );
+      }
     } on FirebaseAuthException catch (e) {
       showError(e.message ?? "Signup failed!");
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
   void showError(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-    setState(() {
-      isLoading = false;
-    });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Center(
+      backgroundColor: Colors.blue[50],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
           child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.chat_bubble, size: 80, color: Colors.greenAccent),
-                SizedBox(height: 10),
-                Text('Sign Up',
-                    style:
-                    TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                SizedBox(height: 20),
+                const Icon(Icons.chat_bubble, size: 80, color: Colors.blueAccent),
+                const SizedBox(height: 20),
+                const Text(
+                  'Create Account',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent,
+                  ),
+                ),
+                const SizedBox(height: 30),
 
                 // Username Field
                 TextField(
                   controller: usernameController,
                   decoration: InputDecoration(
-                      labelText: 'Username',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person)),
+                    labelText: 'Username',
+                    prefixIcon: const Icon(Icons.person, color: Colors.blueAccent),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.blueAccent),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
                 // Email Field
                 TextField(
                   controller: emailController,
                   decoration: InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.email)),
+                    labelText: 'Email',
+                    prefixIcon: const Icon(Icons.email, color: Colors.blueAccent),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.blueAccent),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
                   keyboardType: TextInputType.emailAddress,
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
                 // Password Field
                 TextField(
                   controller: passwordController,
                   obscureText: !isPasswordVisible,
                   decoration: InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock),
-                      suffixIcon: IconButton(
-                          icon: Icon(isPasswordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off),
-                          onPressed: () {
-                            setState(() {
-                              isPasswordVisible = !isPasswordVisible;
-                            });
-                          })),
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock, color: Colors.blueAccent),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.blueAccent,
+                      ),
+                      onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.blueAccent),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 30),
 
                 // Signup Button
                 ElevatedButton(
-                  onPressed: () async {
-                    await createNewUser();
-                  },
-                  child: isLoading
-                      ? CircularProgressIndicator()
-                      : Text('Sign Up'),
+                  onPressed: isLoading ? null : createNewUser,
                   style: ElevatedButton.styleFrom(
-                      minimumSize: Size(double.infinity, 50)),
+                    backgroundColor: Colors.blueAccent,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                    'Sign Up',
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 20),
 
                 // Go to Login
                 TextButton(
                   onPressed: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => LoginPage()));
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LoginPage()),
+                    );
                   },
-                  child: Text('Go to Login'),
+                  child: const Text(
+                    'Already have an account? Login',
+                    style: TextStyle(color: Colors.blueAccent),
+                  ),
                 ),
-
-                // Social Media Login Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      onPressed: () {},
-                      icon: Icon(Icons.g_mobiledata,
-                          size: 50, color: Colors.redAccent),
-                    ),
-                    SizedBox(width: 10),
-                    IconButton(
-                      onPressed: () {},
-                      icon: Icon(Icons.facebook, size: 40, color: Colors.blue),
-                    )
-                  ],
-                )
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    usernameController.dispose();
+    super.dispose();
   }
 }
